@@ -11,7 +11,7 @@ import (
 func DbUp() {
 	db, err := sql.Open("sqlite3", "posts.db")
 	if err != nil {
-		log.Fatalf("Error: could not open/create posts.db: %v\n", err)
+		log.Fatalf("Error: could not open posts.db: %v\n", err)
 	}
 	defer db.Close()
 
@@ -19,6 +19,7 @@ func DbUp() {
 	CREATE TABLE IF NOT EXISTS posts (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	content TEXT NOT NULL
+	likes INTEGER DEFAULT 0
 	);`)
 	if err != nil {
 		log.Fatalf("Error: could not create table: %v\n", err)
@@ -28,7 +29,7 @@ func DbUp() {
 func DbDown() {
 	db, err := sql.Open("sqlite3", "posts.db")
 	if err != nil {
-		log.Fatalf("Error: could not open/create posts.db: %v\n", err)
+		log.Fatalf("Error: could not open posts.db: %v\n", err)
 	}
 	defer db.Close()
 
