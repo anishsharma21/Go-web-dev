@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"database/sql"
+	"encoding/json"
 	"example/practice_project_2/internal/types"
-	"fmt"
 	"net/http"
 )
 
@@ -34,11 +34,9 @@ func GetUsers(db *sql.DB) http.Handler {
 			return
 		}
 
-		userStr := ""
-		for _, user := range users {
-			userStr += fmt.Sprintf("%d\t%s\t%s\t%v\n", user.Id, user.Name, user.Email, user.CreatedAt)
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(users); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-
-		fmt.Fprintf(w, userStr)
 	})
 }

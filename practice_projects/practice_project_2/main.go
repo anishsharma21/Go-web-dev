@@ -17,6 +17,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// TODO remove app.db from tracking, including github where it has already been pushed to
+
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -36,7 +38,7 @@ func main() {
 	mux.Handle("GET /", http.FileServer(http.Dir("./public")))
 
 	server := &http.Server{
-		Addr: ":"+port,
+		Addr:    ":" + port,
 		Handler: mux,
 		BaseContext: func(net.Listener) context.Context {
 			log.Println(fmt.Sprintf("Server started on port %s...", port))
@@ -58,7 +60,7 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan
 
-	shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 10 * time.Second)
+	shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 10*time.Second)
 	defer shutdownRelease()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
