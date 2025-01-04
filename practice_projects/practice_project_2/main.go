@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
+	"example/practice_project_2/internal/handlers"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -10,24 +13,33 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = ":8080"
+		port = "8080"
+	}
+
+	db, err := dbInit()
+	if err != nil {
+		log.Fatalf("Could not connect to db: %v\n", err)
 	}
 
 	mux := http.NewServeMux()
 
+	mux.Handle("GET /users", handlers.GetUsers(db))
+
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("public"))))
-	mux.Handle("GET /", http.FileServer(http.Dir(".")))
+	mux.Handle("GET /", http.FileServer(http.Dir("./public")))
 
 	server := &http.Server{
-		Addr: port,
+		Addr: ":"+port,
 		Handler: mux,
 		BaseContext: func(net.Listener) context.Context {
-			log.Println("Server started on", port)
+			log.Println(fmt.Sprintf("Server started on port %s...", port))
 			return context.Background()
 		},
 	}
@@ -55,4 +67,18 @@ func main() {
 
 	<-shutdownChan
 	log.Println("Graceful shutdown complete.")
+}
+
+func dbInit() (*sql.DB, error) {
+	db, err := sql.Open("sqlite3", "app.db")
+	if err != nil {
+		return nil, fmt.Errorf("could not open the database: %v\n", err)
+	}
+
+	err = db.Ping()
+	if err != nil {
+		return nil, fmt.Errorf("could not ping the database: %v\n", err)
+	}
+
+	return db, nil
 }
