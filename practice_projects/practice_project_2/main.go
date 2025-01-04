@@ -17,8 +17,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// TODO remove app.db from tracking, including github where it has already been pushed to
-
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -30,12 +28,7 @@ func main() {
 		log.Fatalf("Could not connect to db: %v\n", err)
 	}
 
-	mux := http.NewServeMux()
-
-	mux.Handle("GET /users", handlers.GetUsers(db))
-
-	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("public"))))
-	mux.Handle("GET /", http.FileServer(http.Dir("./public")))
+	mux := setupRoutes(db)
 
 	server := &http.Server{
 		Addr:    ":" + port,
@@ -83,4 +76,16 @@ func dbInit() (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func setupRoutes(db *sql.DB) *http.ServeMux {
+	mux := http.NewServeMux()
+
+	mux.Handle("GET /users", handlers.GetUsers(db))
+	mux.Handle("GET /users/{id}", handlers.GetUserById(db))
+
+	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("public"))))
+	mux.Handle("GET /", http.FileServer(http.Dir("./public")))
+
+	return mux
 }
