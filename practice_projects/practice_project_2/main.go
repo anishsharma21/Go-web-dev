@@ -64,6 +64,19 @@ func main() {
 	log.Println("Graceful shutdown complete.")
 }
 
+func setupRoutes(db *sql.DB) *http.ServeMux {
+	mux := http.NewServeMux()
+
+	mux.Handle("GET /users", handlers.GetUsers(db))
+	mux.Handle("GET /users/{id}", handlers.GetUserById(db))
+	mux.Handle("POST /users", handlers.AddUser(db))
+
+	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("public"))))
+	mux.Handle("GET /", http.FileServer(http.Dir("./public")))
+
+	return mux
+}
+
 func dbInit() (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", "app.db")
 	if err != nil {
@@ -76,16 +89,4 @@ func dbInit() (*sql.DB, error) {
 	}
 
 	return db, nil
-}
-
-func setupRoutes(db *sql.DB) *http.ServeMux {
-	mux := http.NewServeMux()
-
-	mux.Handle("GET /users", handlers.GetUsers(db))
-	mux.Handle("GET /users/{id}", handlers.GetUserById(db))
-
-	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("public"))))
-	mux.Handle("GET /", http.FileServer(http.Dir("./public")))
-
-	return mux
 }

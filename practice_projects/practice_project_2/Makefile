@@ -1,7 +1,7 @@
-.PHONY: dbup dbdown
+.PHONY: dbup dbdown up down
 
-dbup:
+dbup up:
 	~/go/bin/goose -dir ./db/migrations sqlite3 app.db up
 
-dbdown:
+dbdown down:
 	~/go/bin/goose -dir ./db/migrations sqlite3 app.db down
