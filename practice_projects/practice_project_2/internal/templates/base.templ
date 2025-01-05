@@ -1,0 +1,18 @@
+package templates
+
+import "example/practice_project_2/internal/types"
+
+templ Base(users []types.User) {
+    <html>
+        <head>
+            <title>My Site</title>
+        </head>
+        <body>
+        <ul>
+        for _, user := range users {
+            <p>{ user.Name } { user.Email }</p>
+        }
+        </ul>
+        </body>
+    </html>
+}

@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"example/practice_project_2/internal/templates"
 	"example/practice_project_2/internal/types"
 	"log"
 	"net/http"
@@ -43,10 +44,13 @@ func GetUsers(db *sql.DB) http.Handler {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(users); err != nil {
-			http.Error(w, "Error encoding user data", http.StatusInternalServerError)
-			log.Printf("error encoding user data: %v\n", err)
+		component := templates.Base(users)
+		w.Header().Set("Content-Type", "text/html")
+		err = component.Render(r.Context(), w)
+		if err != nil {
+			http.Error(w, "Error rendering view", http.StatusInternalServerError)
+			log.Printf("error rendering users view: %v\n", err)
+			return
 		}
 	})
 }
