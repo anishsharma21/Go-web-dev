@@ -24,4 +24,16 @@ chmod +x tailwindcss-macos-arm64
 mv tailwindcss-macos-arm64 tailwindcss
 ```
 
+To start tailwind builder and watcher:
+
+```bash
+./tailwindcss -i ./public/css/input.css -o ./public/css/output.css -w
+```
+
+Tailwindcss build for production:
+
+```bash
+./tailwindcss -i ./public/css/input.css -o ./public/css/output.css -m
+```
+
 Might need to also specify the GOPATH... not sure though
