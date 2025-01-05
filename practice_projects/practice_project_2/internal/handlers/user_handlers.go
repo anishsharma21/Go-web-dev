@@ -4,17 +4,20 @@ import (
 	"database/sql"
 	"encoding/json"
 	"example/practice_project_2/internal/types"
-	"fmt"
 	"log"
 	"net/http"
 )
 
-// TODO fix up logging, expose less info to client, log errors for debugging
+func init() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+}
+
 func GetUsers(db *sql.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rows, err := db.Query("SELECT id, name, email, created_at FROM users")
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Error retrieving user data", http.StatusInternalServerError)
+			log.Printf("error retrieving user data from db: %v\n", err)
 			return
 		}
 		defer rows.Close()
@@ -25,7 +28,8 @@ func GetUsers(db *sql.DB) http.Handler {
 
 			err := rows.Scan(&user.Id, &user.Name, &user.Email, &user.CreatedAt)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, "Error processing user data", http.StatusInternalServerError)
+				log.Printf("error scanning row from user data: %v\n", err)
 				return
 			}
 
@@ -33,13 +37,15 @@ func GetUsers(db *sql.DB) http.Handler {
 		}
 
 		if err = rows.Err(); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Error retrieving user data", http.StatusInternalServerError)
+			log.Printf("error retrieving user data from db: %v\n", err)
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(users); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Error encoding user data", http.StatusInternalServerError)
+			log.Printf("error encoding user data: %v\n", err)
 		}
 	})
 }
@@ -48,7 +54,8 @@ func GetUserById(db *sql.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "id not provided", http.StatusBadRequest)
+			http.Error(w, "User id not provided", http.StatusBadRequest)
+			log.Println("user id not provided")
 			return
 		}
 
@@ -56,13 +63,15 @@ func GetUserById(db *sql.DB) http.Handler {
 		row := db.QueryRow("SELECT id, name, email, created_at FROM users WHERE id = ?", id)
 		err := row.Scan(&user.Id, &user.Name, &user.Email, &user.CreatedAt)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("User not found: %v\n", err), http.StatusNotFound)
+			http.Error(w, "User not found", http.StatusNotFound)
+			log.Printf("user not found: %v\n", err)
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(user); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Error encoding data", http.StatusInternalServerError)
+			log.Printf("error encoding data: %v\n", err)
 		}
 	})
 }
@@ -71,20 +80,23 @@ func AddUser(db *sql.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var user types.User
 		if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-			http.Error(w, fmt.Sprintf("Invalid request payload: %v\n", err), http.StatusBadRequest)
+			http.Error(w, "Error decoding data", http.StatusBadRequest)
+			log.Printf("error decoding user data: %v\n", err)
 			return
 		}
 
 		query := "INSERT INTO users (name, email, created_at) VALUES (?, ?, ?)"
 		result, err := db.Exec(query, user.Name, user.Email, user.CreatedAt)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Error processing data", http.StatusInternalServerError)
+			log.Printf("error adding user %v into users table: %v\n", user, err)
 			return
 		}
 
 		id, err := result.LastInsertId()
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Error processing data", http.StatusInternalServerError)
+			log.Printf("error retrieving id from result: %v\n", err)
 			return
 		}
 
@@ -92,7 +104,8 @@ func AddUser(db *sql.DB) http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		if err := json.NewEncoder(w).Encode(user); err != nil {
-			http.Error(w, fmt.Sprintf("Failed to encode data: %v\n", err), http.StatusInternalServerError)
+			http.Error(w, "Error encoding data", http.StatusInternalServerError)
+			log.Printf("error encoding user data: %v\n", err)
 		}
 	})
 }
@@ -101,7 +114,8 @@ func DeleteUserById(db *sql.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
-			http.Error(w, "Invalid id given: \"\"", http.StatusBadRequest)
+			http.Error(w, "Error user id not given", http.StatusBadRequest)
+			log.Println("user id not given in url path")
 			return
 		}
 
@@ -111,19 +125,21 @@ func DeleteUserById(db *sql.DB) http.Handler {
 		err := row.Scan(&user.Id, &user.Name, &user.Email, &user.CreatedAt)
 		if err == sql.ErrNoRows {
 			http.Error(w, "User not found", http.StatusNotFound)
+			log.Printf("error finding user to delete: %v\n", err)
 			return
 		}
 
 		query = "DELETE FROM users WHERE id = ?"
 		_, err = db.Exec(query, id)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Unable to delete user with id %s: %v\n", id, err), http.StatusInternalServerError)
+			http.Error(w, "User not deleted", http.StatusInternalServerError)
+			log.Printf("error deleting user %v from users table: %v\n", user, err)
 			return
 		}
 
 		if err = json.NewEncoder(w).Encode(user); err != nil {
 			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-			log.Printf("DeleteUserById: Error encoding response: %v\n", err)
+			log.Printf("error encoding user data: %v\nUser Data: %v\n", err, user)
 			return
 		}
 	})
