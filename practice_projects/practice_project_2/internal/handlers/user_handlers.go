@@ -6,6 +6,7 @@ import (
 	"example/practice_project_2/internal/types"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 func init() {
@@ -119,10 +120,17 @@ func DeleteUserById(db *sql.DB) http.Handler {
 			return
 		}
 
+		userId, err := strconv.Atoi(id)
+		if err != nil {
+			http.Error(w, "Invalid user id", http.StatusBadRequest)
+			log.Printf("invalid user id %q converted to %q: %v\n", id, userId, err)
+			return
+		}
+
 		var user types.User
 		query := "SELECT id, name, email, created_at FROM users WHERE id = ?"
 		row := db.QueryRow(query, id)
-		err := row.Scan(&user.Id, &user.Name, &user.Email, &user.CreatedAt)
+		err = row.Scan(&user.Id, &user.Name, &user.Email, &user.CreatedAt)
 		if err == sql.ErrNoRows {
 			http.Error(w, "User not found", http.StatusNotFound)
 			log.Printf("error finding user to delete: %v\n", err)
@@ -138,6 +146,55 @@ func DeleteUserById(db *sql.DB) http.Handler {
 		}
 
 		if err = json.NewEncoder(w).Encode(user); err != nil {
+			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+			log.Printf("error encoding user data: %v\nUser Data: %v\n", err, user)
+			return
+		}
+	})
+}
+
+func UpdateUserById(db *sql.DB) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			http.Error(w, "User id not provided", http.StatusBadRequest)
+			log.Printf("user id not provided in %q\n", r.URL.RawPath)
+			return
+		}
+
+		userId, err := strconv.Atoi(id)
+		if err != nil {
+			http.Error(w, "Invalid user id", http.StatusBadRequest)
+			log.Printf("invalid user id %q converted to %q: %v\n", id, userId, err)
+			return
+		}
+
+		var user types.User
+		if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+			http.Error(w, "Error decoding data", http.StatusInternalServerError)
+			log.Printf("error decoding body data to update user: %v\nbody data: %v\n", err, r.Body)
+			return
+		}
+
+		query := `UPDATE users
+		SET name = ?, email = ?, created_at = ?
+		WHERE id = ?;`
+		_, err = db.Exec(query, &user.Name, &user.Email, &user.CreatedAt, userId)
+		if err != nil {
+			http.Error(w, "Error updating user data", http.StatusInternalServerError)
+			log.Printf("error updating user data: %v\nuser data: %v\n", err, user)
+			return
+		}
+
+		query = "SELECT id, name, email, created_at FROM users WHERE id = ?"
+		row := db.QueryRow(query, userId)
+		if err = row.Scan(&user.Id, &user.Name, &user.Email, &user.CreatedAt); err == sql.ErrNoRows {
+			http.Error(w, "User not found", http.StatusNotFound)
+			log.Printf("user not found after updating: %v\nuser id: %d\n", err, userId)
+			return
+		}
+
+		if err = json.NewEncoder(w).Encode(&user); err != nil {
 			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 			log.Printf("error encoding user data: %v\nUser Data: %v\n", err, user)
 			return

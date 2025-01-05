@@ -71,6 +71,7 @@ func setupRoutes(db *sql.DB) *http.ServeMux {
 	mux.Handle("GET /users/{id}", handlers.GetUserById(db))
 	mux.Handle("POST /users", handlers.AddUser(db))
 	mux.Handle("DELETE /users/{id}", handlers.DeleteUserById(db))
+	mux.Handle("PUT /users/{id}", handlers.UpdateUserById(db))
 
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("public"))))
 	mux.Handle("GET /", http.FileServer(http.Dir("./public")))
