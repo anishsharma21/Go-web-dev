@@ -76,7 +76,7 @@ func GetUserById(db *sql.DB) http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(user); err != nil {
 			http.Error(w, "Error encoding data", http.StatusInternalServerError)
-			log.Printf("error encoding data: %v\n", err)
+			log.Printf("error encoding user data: %v\n", err)
 		}
 	})
 }
