@@ -593,12 +593,24 @@ video {
   margin-right: auto;
 }
 
+.flex {
+  display: flex;
+}
+
 .table {
   display: table;
 }
 
 .min-w-full {
   min-width: 100%;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
 }
 
 .overflow-hidden {

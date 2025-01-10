@@ -17,6 +17,10 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+func init() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+}
+
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -74,7 +78,7 @@ func setupRoutes(db *sql.DB) *http.ServeMux {
 	mux.Handle("PUT /users/{id}", handlers.UpdateUserById(db))
 
 	mux.Handle("GET /public/css/", http.StripPrefix("/public/css/", http.FileServer(http.Dir("public/css"))))
-	mux.Handle("GET /", handlers.GetUsers(db))
+	mux.Handle("GET /", handlers.Base())
 
 	return mux
 }

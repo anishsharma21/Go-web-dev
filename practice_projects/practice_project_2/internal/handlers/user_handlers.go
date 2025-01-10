@@ -10,10 +10,6 @@ import (
 	"strconv"
 )
 
-func init() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
-}
-
 func GetUsers(db *sql.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rows, err := db.Query("SELECT id, name, email, created_at FROM users")
@@ -44,9 +40,10 @@ func GetUsers(db *sql.DB) http.Handler {
 			return
 		}
 
-		component := templates.Base(users)
+		userComponent := templates.Users(users)
+		completeComponent := templates.Base(userComponent)
 		w.Header().Set("Content-Type", "text/html")
-		err = component.Render(r.Context(), w)
+		err = completeComponent.Render(r.Context(), w)
 		if err != nil {
 			http.Error(w, "Error rendering view", http.StatusInternalServerError)
 			log.Printf("error rendering users view: %v\n", err)

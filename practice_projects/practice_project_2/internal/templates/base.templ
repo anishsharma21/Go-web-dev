@@ -1,36 +1,24 @@
 package templates
 
-import (
-	"example/practice_project_2/internal/types"
-	"time"
-)
-
-templ Base(users []types.User) {
+templ Base(child templ.Component) {
 	<html>
 		<head>
 			<title>Users CRUD app</title>
 			<link rel="stylesheet" href="../../public/css/output.css"/>
 		</head>
-		<body class="bg-gray-100 text-gray-900">
+		<body>
+			<nav class="bg-gray-800 text-white p-4">
+				<div class="container mx-auto flex justify-between items-center">
+					<a href="/" class="text-white">Home</a>
+					<a href="/users" class="text-white">Users</a>
+				</div>
+			</nav>
 			<div class="container mx-auto p-4">
-				<table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
-					<thead class="bg-gray-800 text-white">
-						<tr>
-							<th class="py-2 px-4">Name</th>
-							<th class="py-2 px-4">Email</th>
-							<th class="py-2 px-4">Created At</th>
-						</tr>
-					</thead>
-					<tbody>
-						for _, user := range users {
-							<tr class="border-b">
-								<td class="py-2 px-4">{ user.Name }</td>
-								<td class="py-2 px-4">{ user.Email }</td>
-								<td class="py-2 px-4">{ user.CreatedAt.Local().Format(time.UnixDate) }</td>
-							</tr>
-						}
-					</tbody>
-				</table>
+				if child == nil {
+					{ "" }
+				} else {
+					@child
+				}
 			</div>
 		</body>
 	</html>
