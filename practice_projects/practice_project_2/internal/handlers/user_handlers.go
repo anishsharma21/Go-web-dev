@@ -40,10 +40,9 @@ func GetUsers(db *sql.DB) http.Handler {
 			return
 		}
 
-		userComponent := templates.Users(users)
-		completeComponent := templates.Base(userComponent)
+		component := wrapComponentWithLayout(templates.Users(users))
 		w.Header().Set("Content-Type", "text/html")
-		err = completeComponent.Render(r.Context(), w)
+		err = component.Render(r.Context(), w)
 		if err != nil {
 			http.Error(w, "Error rendering view", http.StatusInternalServerError)
 			log.Printf("error rendering users view: %v\n", err)
