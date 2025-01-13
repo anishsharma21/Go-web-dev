@@ -40,7 +40,7 @@ func GetUsers(db *sql.DB) http.Handler {
 			return
 		}
 
-		component := wrapComponentWithLayout(templates.Users(users))
+		component := templates.Users(users)
 		w.Header().Set("Content-Type", "text/html")
 		err = component.Render(r.Context(), w)
 		if err != nil {
