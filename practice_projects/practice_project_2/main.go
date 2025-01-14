@@ -72,6 +72,7 @@ func setupRoutes(db *sql.DB) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	mux.Handle("GET /users", handlers.GetUsers(db))
+	mux.Handle("GET /users/new", handlers.AddUserPage(db))
 	mux.Handle("GET /users/{id}", handlers.GetUserById(db))
 	mux.Handle("POST /users", handlers.AddUser(db))
 	mux.Handle("DELETE /users/{id}", handlers.DeleteUserById(db))

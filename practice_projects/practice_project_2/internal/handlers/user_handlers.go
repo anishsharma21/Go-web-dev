@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"example/practice_project_2/internal/templates"
@@ -8,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func GetUsers(db *sql.DB) http.Handler {
@@ -77,13 +79,38 @@ func GetUserById(db *sql.DB) http.Handler {
 	})
 }
 
+func AddUserPage(db *sql.DB) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		component := templates.AddUsers()
+		w.Header().Set("Content-Type", "text/html")
+		err := component.Render(context.Background(), w)
+		if err != nil {
+			http.Error(w, "Error rendering view", http.StatusInternalServerError)
+			log.Printf("error rendering users view: %v\n", err)
+			return
+		}
+	})
+}
+
 func AddUser(db *sql.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var user types.User
-		if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-			http.Error(w, "Error decoding data", http.StatusBadRequest)
-			log.Printf("error decoding user data: %v\n", err)
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Error parsing form data", http.StatusBadRequest)
+			log.Printf("error parsing form data: %v\n", err)
 			return
+		}
+
+		var user types.User
+		user.Name = r.FormValue("name")
+		user.Email = r.FormValue("email")
+		if user.Name == "" || user.Email == "" {
+			http.Error(w, "Name or email not provided", http.StatusBadRequest)
+			log.Println("name or email not provided")
+			return
+		}
+
+		if user.CreatedAt == (time.Time{}) {
+			user.CreatedAt = time.Now()
 		}
 
 		query := "INSERT INTO users (name, email, created_at) VALUES (?, ?, ?)"
