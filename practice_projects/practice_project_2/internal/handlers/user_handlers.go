@@ -43,6 +43,9 @@ func GetUsers(db *sql.DB) http.Handler {
 		}
 
 		component := templates.Users(users)
+		if r.Header.Get("HX-Request") == "" {
+			component = templates.Base(component)
+		}
 		w.Header().Set("Content-Type", "text/html")
 		err = component.Render(r.Context(), w)
 		if err != nil {
@@ -83,6 +86,11 @@ func AddUserPage(db *sql.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		component := templates.AddUsers()
 		w.Header().Set("Content-Type", "text/html")
+
+		if r.Header.Get("HX-Request") == "" {
+			component = templates.Base(component)
+		}
+
 		err := component.Render(context.Background(), w)
 		if err != nil {
 			http.Error(w, "Error rendering view", http.StatusInternalServerError)

@@ -8,7 +8,7 @@ import (
 
 func Base() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		component := templates.Base()
+		component := templates.Base(nil)
 		w.Header().Set("Content-Type", "text/html")
 		err := component.Render(r.Context(), w)
 		if err != nil {
