@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"html/template"
 	"log"
 	"net"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/anishsharma21/Go-web-dev/docker_practice_project/internal/handlers"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -21,6 +23,11 @@ func init() {
 }
 
 func main() {
+	templates, err := template.ParseGlob("internal/templates/*.html")
+	if err != nil {
+		log.Fatalf("Error parsing HTML templates: %v\n", err)
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -31,7 +38,7 @@ func main() {
 		log.Fatalf("Could not connect to db: %v\n", err)
 	}
 
-	mux := setupRoutes(db)
+	mux := setupRoutes(db, templates)
 
 	server := &http.Server{
 		Addr:    ":" + port,
@@ -81,10 +88,11 @@ func dbInit() (*sql.DB, error) {
 	return db, nil
 }
 
-func setupRoutes(db *sql.DB) *http.ServeMux {
+func setupRoutes(db *sql.DB, templates *template.Template) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	mux.Handle("GET /", handlers.IndexHandler(db, templates))
 
 	return mux
 }
