@@ -1,11 +1,17 @@
 package main
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -17,24 +23,51 @@ func init() {
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = ":8080"
+		port = "8080"
 	}
 
-	db, err := DBInit()
+	db, err := dbInit()
 	if err != nil {
 		log.Fatalf("Could not connect to db: %v\n", err)
 	}
 
 	mux := setupRoutes(db)
 
-	log.Printf("HTTP server started on port %v...", port)
-	err = http.ListenAndServe(port, mux)
-	if err != nil {
-		log.Fatalf("Error starting server: %v\n", err)
+	server := &http.Server{
+		Addr:    ":" + port,
+		Handler: mux,
+		BaseContext: func(net.Listener) context.Context {
+			log.Printf("Server started on port %v...\n", port)
+			return context.Background()
+		},
 	}
+
+	shutdownChan := make(chan bool, 1)
+
+	go func() {
+		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("HTTP server closed early: %v\n", err)
+		}
+		log.Println("Stopped serving new connections.")
+		shutdownChan <- true
+	}()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	<-sigChan
+
+	shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownRelease()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Fatalf("HTTP shutdown error: %v\n", err)
+	}
+
+	<-shutdownChan
+	log.Println("Graceful shutdown complete.")
 }
 
-func DBInit() (*sql.DB, error) {
+func dbInit() (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", "app.db")
 	if err != nil {
 		return nil, fmt.Errorf("could not open the database: %v\n", err)
