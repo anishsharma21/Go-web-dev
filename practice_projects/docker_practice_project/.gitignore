@@ -2,3 +2,4 @@ go.sum
 *.db
 tailwindcss
 static/css/output.css
+tmp
