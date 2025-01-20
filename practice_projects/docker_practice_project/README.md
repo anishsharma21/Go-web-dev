@@ -54,3 +54,17 @@ Initialise `tailwind.config.js` file with `./tailwindcss init`. Then, created an
 ```
 
 This output file is not tracked and needs to be rebuilt on deployment. For production, this file should be rebuilt with the `--minify` flag.
+
+### Docker commands
+
+First build the Docker image (cd into the root of this project)
+
+```bash
+docker build -t bookapp .
+```
+
+Then run the container, making sure to map your local port to 8080 if you want to access the site locally
+
+```bash
+docker run -p 8080:8080 bookapp
+```
