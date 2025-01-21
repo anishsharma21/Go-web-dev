@@ -3,3 +3,4 @@ go.sum
 tailwindcss
 static/css/output.css
 tmp
+fly.toml

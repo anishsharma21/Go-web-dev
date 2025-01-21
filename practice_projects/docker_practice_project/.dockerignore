@@ -1,3 +1,8 @@
 .git
 Dockerfile
 .dockerignore
+.air.toml
+fly.toml
+app.db
+tailwindcss
+static/css/input.css
