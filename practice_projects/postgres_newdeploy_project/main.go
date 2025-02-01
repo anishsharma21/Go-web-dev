@@ -10,18 +10,21 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/anishsharma21/Go-web-dev/practice_projects/postgres_newdeploy_project/internal/handlers"
 	_ "github.com/lib/pq"
 )
 
 func main() {
-	_, err := SetupDb()
+	db, err := SetupDb()
 	if err != nil {
 		log.Fatalf("Failed to initialise connection to the database: %v\n", err)
 	}
+	defer db.Close()
 	log.Printf("Initialised the database connection succesfully!\n")
 
 	mux := http.NewServeMux()
 
+	mux.Handle("POST /users", handlers.AddUser(db))
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Hello, world!")
 	})
@@ -42,32 +45,40 @@ func main() {
 }
 
 func SetupDb() (*sql.DB, error) {
+	env := os.Getenv("ENV")
 	dbHost := os.Getenv("DB_HOST")
 	dbPort := os.Getenv("DB_PORT")
 	dbUser := os.Getenv("DB_USER")
 	dbPassword := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
 
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", dbHost, dbPort, dbUser, dbPassword, dbName)
+	var dsn string
+	if env == "production" {
+		dsn = os.Getenv("DATABASE_URL")
+	} else {
+		dsn = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", dbHost, dbPort, dbUser, dbPassword, dbName)
+	}
 
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to connect to database: %v\n", err)
 	}
-	defer db.Close()
 
 	err = db.Ping()
 	if err != nil {
 		return nil, fmt.Errorf("Failed to ping the database: %v\n", err)
 	}
 
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS questions (
-	id SERIAL PRIMARY KEY,
-	question TEXT NOT NULL,
-	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-	);`)
+	createTableQuery := `
+	CREATE TABLE IF NOT EXISTS users (
+		id SERIAL PRIMARY KEY,
+		name TEXT NOT NULL,
+		email TEXT UNIQUE NOT NULL,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);`
+	_, err = db.Exec(createTableQuery)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create the 'questions' table: %v\n", err)
+		return nil, fmt.Errorf("Failed to create the 'users' table: %v\n", err)
 	}
 
 	return db, nil
