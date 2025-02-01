@@ -67,7 +67,6 @@ func SetupDb() (*sql.DB, error) {
 
 	err = db.Ping()
 	if err != nil {
-		log.Printf("ENVIRONMENT: %s, DATABASE_URL: %s\n", env, os.Getenv("DATABASE_URL"))
 		return nil, fmt.Errorf("Failed to ping the database: %v\n", err)
 	}
 
