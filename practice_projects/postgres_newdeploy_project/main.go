@@ -24,6 +24,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
+	mux.Handle("GET /users", handlers.GetUsers(db))
 	mux.Handle("POST /users", handlers.AddUser(db))
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Hello, world!")
