@@ -1,0 +1,44 @@
+name: Run Go Tests
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: testdb
+        ports:
+          5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Go version 1.23.4
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+
+      - name: Wait for Postgres
+        run: |
+          until pg_isready -h localhost -p 5432 -U testuser; do
+            echo "Waiting for database...";
+            sleep 2;
+          done
+
+      - name: Run Tests
+        env:
+          ENV: cicd
+          DATABASE_URL: postgres://testuser:testpassword@localhost:5432/testdb?sslmode=disable
+        run: go test -v ./practice_projects/postgres_newdeploy_project/

@@ -54,7 +54,7 @@ func SetupDb() (*sql.DB, error) {
 	dbName := os.Getenv("DB_NAME")
 
 	var dsn string
-	if env == "production" {
+	if env == "production" || env == "cicd" {
 		dsn = os.Getenv("DATABASE_URL")
 	} else {
 		dsn = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", dbHost, dbPort, dbUser, dbPassword, dbName)

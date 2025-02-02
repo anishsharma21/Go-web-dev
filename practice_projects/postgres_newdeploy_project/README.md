@@ -13,3 +13,7 @@ go get -u github.com/lib/pq
 ```
 
 To run the postgres database with the backend code locally, navigate to the root of your directory in your terminal, and run `docker-compose up --build`, with the optional `-d` flag if you want to run in a detached state where the containers run in the background rather than in the terminal where you can view the logs. You can then run `docker-compose down` to stop both the server and database container, but the data will be persisted unless you remove the volume for the database itself.
+
+## Run tests
+
+To run tests locally, ensure that you have run the docker-compose command so the tests can connect to the local database. Tests can be run using `go test ./...` command with the option `-v` flag for verbose output of the test outputs. The `./...` is important as it will recursively look for all test files in directories and subdirectories. You can also specify the path directly. It's also a good idea to run `go clean -cache` since Go will cache the results of tests if code doesn't change.
