@@ -41,4 +41,4 @@ jobs:
         env:
           ENV: cicd
           DATABASE_URL: postgres://testuser:testpassword@localhost:5432/testdb?sslmode=disable
-        run: go test -v ./practice_projects/postgres_newdeploy_project/
+        run: go test ./... -v
