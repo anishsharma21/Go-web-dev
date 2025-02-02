@@ -35,6 +35,18 @@ func init() {
 	if err != nil {
 		log.Fatalf("Failed to ping the database: %v\n", err)
 	}
+
+	createTableQuery := `
+	CREATE TABLE IF NOT EXISTS users (
+		id SERIAL PRIMARY KEY,
+		name TEXT NOT NULL,
+		email TEXT UNIQUE NOT NULL,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);`
+	_, err = db.Exec(createTableQuery)
+	if err != nil {
+		log.Fatalf("Failed to create the 'users' table: %v\n", err)
+	}
 }
 
 func TestMain(m *testing.M) {
