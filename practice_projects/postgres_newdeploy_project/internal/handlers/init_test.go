@@ -3,6 +3,7 @@ package handlers_test
 import (
 	"database/sql"
 	"log"
+	"log/slog"
 	"net/http/httptest"
 	"os"
 	"testing"
@@ -12,6 +13,7 @@ import (
 )
 
 var db *sql.DB
+var logger *slog.Logger
 var server *httptest.Server
 
 func init() {
@@ -27,8 +29,10 @@ func init() {
 		log.Fatalf("Failed to open database connection: %v\n", err)
 	}
 
+	logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
 	// Setup test handlers
-	handler := handlers.AddUser(db)
+	handler := handlers.AddUser(db, logger)
 	server = httptest.NewServer(handler)
 
 	err = db.Ping()

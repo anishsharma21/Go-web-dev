@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -14,35 +15,59 @@ import (
 	_ "github.com/lib/pq"
 )
 
+type App struct {
+	DB     *sql.DB
+	Logger *slog.Logger
+}
+
 func main() {
-	db, err := SetupDb()
+	app, err := initializeApp()
 	if err != nil {
-		log.Fatalf("Failed to initialise connection to the database: %v\n", err)
+		log.Fatalf("Failed to initialize the application: %v\n", err)
 	}
-	defer db.Close()
-	log.Printf("Initialised the database connection succesfully!\n")
-
-	mux := http.NewServeMux()
-
-	mux.Handle("GET /users", handlers.GetUsers(db))
-	mux.Handle("POST /users", handlers.AddUser(db))
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, world!")
-	})
+	defer app.DB.Close()
 
 	server := &http.Server{
 		Addr:    ":8080",
-		Handler: mux,
+		Handler: app.setupRoutes(),
 		BaseContext: func(l net.Listener) context.Context {
-			log.Printf("Server started on port 8080...\n")
+			app.Logger.Info("Server started on port 8080...\n")
 			return context.Background()
 		},
 	}
 
 	if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-		log.Fatalf("HTTP server closed early: %v", err)
+		app.Logger.Error("HTTP server closed early: %v", slog.String("error", err.Error()))
 	}
-	log.Println("Server shutdown.")
+	app.Logger.Info("Server shutdown.")
+}
+
+func initializeApp() (*App, error) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
+	db, err := SetupDb()
+	if err != nil {
+		logger.Error("Failed to initialise connection to the database: %v\n", slog.String("error", err.Error()))
+		return nil, err
+	}
+	logger.Info("Initialised the database connection successfully!\n")
+
+	return &App{
+		DB:     db,
+		Logger: logger,
+	}, nil
+}
+
+func (app *App) setupRoutes() *http.ServeMux {
+	mux := http.NewServeMux()
+
+	mux.Handle("GET /users", app.HandlerWrapper(handlers.GetUsers))
+	mux.Handle("POST /users", app.HandlerWrapper(handlers.AddUser))
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Hello, world!")
+	})
+
+	return mux
 }
 
 func SetupDb() (*sql.DB, error) {
@@ -83,4 +108,8 @@ func SetupDb() (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func (app *App) HandlerWrapper(handlerFunc func(*sql.DB, *slog.Logger) http.Handler) http.Handler {
+	return handlerFunc(app.DB, app.Logger)
 }
