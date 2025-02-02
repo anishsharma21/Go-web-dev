@@ -10,6 +10,9 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/anishsharma21/Go-web-dev/practice_projects/postgres_newdeploy_project/internal/handlers"
 	_ "github.com/lib/pq"
@@ -36,10 +39,30 @@ func main() {
 		},
 	}
 
-	if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-		app.Logger.Error("HTTP server closed early: %v", slog.String("error", err.Error()))
+	shutdownChan := make(chan bool, 1)
+
+	go func() {
+		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			app.Logger.Error("HTTP server closed early: %v", slog.String("error", err.Error()))
+		}
+		app.Logger.Info("Stopped serving new connections.")
+		shutdownChan <- true
+	}()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	<-sigChan
+
+	shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownRelease()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		app.Logger.Error("HTTP shutdown error: %v\n", slog.String("error", err.Error()))
 	}
-	app.Logger.Info("Server shutdown.")
+	<-shutdownChan
+	close(shutdownChan)
+
+	app.Logger.Info("Graceful server shutdown complete.")
 }
 
 func initializeApp() (*App, error) {
