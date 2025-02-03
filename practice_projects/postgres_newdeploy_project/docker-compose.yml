@@ -17,7 +17,6 @@ services:
     container_name: go_backend
     depends_on:
       - postgres
-    stop_signal: SIGTERM
     environment:
       DB_HOST: postgres
       DB_PORT: 5432

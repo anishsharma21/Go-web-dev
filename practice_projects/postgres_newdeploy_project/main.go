@@ -48,12 +48,17 @@ func main() {
 			slog.Error("HTTP server closed early", "error", err)
 		}
 		slog.Info("Stopped serving new connections.")
-		shutdownChan <- true
+
+		select {
+		case shutdownChan <- true:
+		default:
+		}
 	}()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	<-sigChan
+	sig := <-sigChan
+	slog.Info("Received signal", "signal", sig)
 
 	shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 10*time.Second)
 	defer shutdownRelease()
