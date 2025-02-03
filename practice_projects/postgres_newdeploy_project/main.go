@@ -19,8 +19,7 @@ import (
 )
 
 type App struct {
-	DB     *sql.DB
-	Logger *slog.Logger
+	DB *sql.DB
 }
 
 func main() {
@@ -34,7 +33,7 @@ func main() {
 		Addr:    ":8080",
 		Handler: app.setupRoutes(),
 		BaseContext: func(l net.Listener) context.Context {
-			app.Logger.Info("Server started on port 8080...\n")
+			slog.Info("Server started on port 8080...")
 			return context.Background()
 		},
 	}
@@ -43,9 +42,9 @@ func main() {
 
 	go func() {
 		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-			app.Logger.Error("HTTP server closed early: %v", slog.String("error", err.Error()))
+			slog.Error("HTTP server closed early", "error", err)
 		}
-		app.Logger.Info("Stopped serving new connections.")
+		slog.Info("Stopped serving new connections.")
 		shutdownChan <- true
 	}()
 
@@ -57,27 +56,27 @@ func main() {
 	defer shutdownRelease()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
-		app.Logger.Error("HTTP shutdown error: %v\n", slog.String("error", err.Error()))
+		slog.Error("HTTP shutdown error", "error", err)
 	}
 	<-shutdownChan
 	close(shutdownChan)
 
-	app.Logger.Info("Graceful server shutdown complete.")
+	slog.Info("Graceful server shutdown complete.")
 }
 
 func initializeApp() (*App, error) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
 
 	db, err := SetupDb()
 	if err != nil {
-		logger.Error("Failed to initialise connection to the database: %v\n", slog.String("error", err.Error()))
+		slog.Error("Failed to initialise connection to the database", "error", err)
 		return nil, err
 	}
-	logger.Info("Initialised the database connection successfully!\n")
+	slog.Info("Initialised the database connection successfully!")
 
 	return &App{
-		DB:     db,
-		Logger: logger,
+		DB: db,
 	}, nil
 }
 
@@ -133,6 +132,6 @@ func SetupDb() (*sql.DB, error) {
 	return db, nil
 }
 
-func (app *App) HandlerWrapper(handlerFunc func(*sql.DB, *slog.Logger) http.Handler) http.Handler {
-	return handlerFunc(app.DB, app.Logger)
+func (app *App) HandlerWrapper(handlerFunc func(*sql.DB) http.Handler) http.Handler {
+	return handlerFunc(app.DB)
 }

@@ -30,9 +30,10 @@ func init() {
 	}
 
 	logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
 
 	// Setup test handlers
-	handler := handlers.AddUser(db, logger)
+	handler := handlers.AddUser(db)
 	server = httptest.NewServer(handler)
 
 	err = db.Ping()
