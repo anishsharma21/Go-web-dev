@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"log/slog"
 	"net"
 	"net/http"
@@ -23,9 +22,13 @@ type App struct {
 }
 
 func main() {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
 	app, err := initializeApp()
 	if err != nil {
-		log.Fatalf("Failed to initialize the application: %v\n", err)
+		slog.Error("Failed to initialise the application", "error", err)
+		return
 	}
 	defer app.DB.Close()
 
@@ -65,9 +68,6 @@ func main() {
 }
 
 func initializeApp() (*App, error) {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	slog.SetDefault(logger)
-
 	db, err := SetupDb()
 	if err != nil {
 		slog.Error("Failed to initialise connection to the database", "error", err)
