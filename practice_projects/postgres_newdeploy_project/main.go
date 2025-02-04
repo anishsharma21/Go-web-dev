@@ -30,7 +30,13 @@ func main() {
 		slog.Error("Failed to initialise the application", "error", err)
 		return
 	}
-	defer app.DB.Close()
+	defer func() {
+		if app.DB != nil {
+			if err := app.DB.Close(); err != nil {
+				slog.Error("Failed to close the database connection", "error", err)
+			}
+		}
+	}()
 
 	server := &http.Server{
 		Addr:    ":8080",
@@ -48,21 +54,18 @@ func main() {
 			slog.Error("HTTP server closed early", "error", err)
 		}
 		slog.Info("Stopped serving new connections.")
-
-		select {
-		case shutdownChan <- true:
-		default:
-		}
+		shutdownChan <- true
 	}()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	sig := <-sigChan
-	slog.Info("Received signal", "signal", sig)
+	slog.Warn("Received signal", "signal", sig.String())
 
 	shutdownCtx, shutdownRelease := context.WithTimeout(context.Background(), 10*time.Second)
 	defer shutdownRelease()
 
+	slog.Info("Shutting down server gracefully...")
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		slog.Error("HTTP shutdown error", "error", err)
 	}
@@ -138,5 +141,10 @@ func SetupDb() (*sql.DB, error) {
 }
 
 func (app *App) HandlerWrapper(handlerFunc func(*sql.DB) http.Handler) http.Handler {
-	return handlerFunc(app.DB)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		handlerFunc(app.DB).ServeHTTP(w, r)
+		duration := time.Since(start).Milliseconds()
+		slog.Info("Completed request", "method", r.Method, "url", r.URL.Path, "duration", fmt.Sprintf("%vms", duration))
+	})
 }
