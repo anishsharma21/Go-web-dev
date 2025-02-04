@@ -12,6 +12,7 @@ FROM gcr.io/distroless/base-debian11
 WORKDIR /
 
 COPY --from=build-stage /main /main
+COPY --from=build-stage /templates /templates
 
 EXPOSE 8080
 

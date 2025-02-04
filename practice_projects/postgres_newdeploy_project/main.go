@@ -93,9 +93,7 @@ func (app *App) setupRoutes() *http.ServeMux {
 
 	mux.Handle("GET /users", app.HandlerWrapper(handlers.GetUsers))
 	mux.Handle("POST /users", app.HandlerWrapper(handlers.AddUser))
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, world!")
-	})
+	mux.Handle("GET /", app.HandlerWrapper(handlers.BaseHandler))
 
 	return mux
 }
@@ -145,6 +143,6 @@ func (app *App) HandlerWrapper(handlerFunc func(*sql.DB) http.Handler) http.Hand
 		start := time.Now()
 		handlerFunc(app.DB).ServeHTTP(w, r)
 		duration := time.Since(start).Milliseconds()
-		slog.Info("Completed request", "method", r.Method, "url", r.URL.Path, "duration", fmt.Sprintf("%vms", duration))
+		slog.Info("Request processed", "method", r.Method, "url", r.URL.Path, "processing_duration", fmt.Sprintf("%vms", duration))
 	})
 }
