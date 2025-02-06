@@ -100,17 +100,12 @@ func (app *App) setupRoutes() *http.ServeMux {
 
 func SetupDb() (*sql.DB, error) {
 	env := os.Getenv("ENV")
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-	dbUser := os.Getenv("DB_USER")
-	dbPassword := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
 
 	var dsn string
 	if env == "production" || env == "cicd" {
 		dsn = os.Getenv("DATABASE_URL")
 	} else {
-		dsn = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", dbHost, dbPort, dbUser, dbPassword, dbName)
+		dsn = "host=localhost port=5432 user=myuser password=mypassword dbname=mydatabase sslmode=disable"
 	}
 
 	db, err := sql.Open("postgres", dsn)

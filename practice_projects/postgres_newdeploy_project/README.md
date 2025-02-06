@@ -20,4 +20,4 @@ To run tests locally, ensure that you have run the docker-compose command so the
 
 ## Local Development
 
-Simply run `docker compose up --watch` and each time you make a change to your code, the backend will rebuild.
+Run `docker compose up -d` to start the local database, and then run `air`. If you don't have `air` installed locally, run `go install github.com/air-verse/air@latest`.

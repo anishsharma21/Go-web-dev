@@ -12,24 +12,5 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  backend:
-    build: .
-    container_name: go_backend
-    depends_on:
-      - postgres
-    environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: myuser
-      DB_PASSWORD: mypassword
-      DB_NAME: mydatabase
-    ports:
-      - "8080:8080"
-    restart: always
-    develop:
-      watch:
-        - action: rebuild
-          path: .
-
 volumes:
   postgres_data:
