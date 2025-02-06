@@ -17,3 +17,7 @@ To run the postgres database with the backend code locally, navigate to the root
 ## Run tests
 
 To run tests locally, ensure that you have run the docker-compose command so the tests can connect to the local database. Tests can be run using `go test ./...` command with the option `-v` flag for verbose output of the test outputs. The `./...` is important as it will recursively look for all test files in directories and subdirectories. You can also specify the path directly. It's also a good idea to run `go clean -cache` since Go will cache the results of tests if code doesn't change.
+
+## Local Development
+
+Simply run `docker-compose up --build -d` (-d for detached mode) and both the local database and `air` will be ran for hot module reloading.
