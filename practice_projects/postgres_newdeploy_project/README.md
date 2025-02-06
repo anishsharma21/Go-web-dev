@@ -20,4 +20,4 @@ To run tests locally, ensure that you have run the docker-compose command so the
 
 ## Local Development
 
-Simply run `docker-compose up --build -d` (-d for detached mode) and both the local database and `air` will be ran for hot module reloading.
+Simply run `docker compose up --watch` and each time you make a change to your code, the backend will rebuild.

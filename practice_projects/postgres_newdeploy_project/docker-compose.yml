@@ -13,9 +13,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
+    build: .
     container_name: go_backend
     depends_on:
       - postgres
@@ -28,6 +26,10 @@ services:
     ports:
       - "8080:8080"
     restart: always
+    develop:
+      watch:
+        - action: rebuild
+          path: .
 
 volumes:
   postgres_data:
